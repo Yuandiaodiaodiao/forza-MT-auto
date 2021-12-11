@@ -16,14 +16,15 @@ def drawLs(ls,startT,endT):
     power = np.array([item.get('power') * 10 for index, item in enumerate(ls)])
     time0 = startT
     time = np.where(time > 0, time - time0, 0)
+    plt.rcParams['savefig.dpi']=500
+    plt.rcParams['figure.dpi']=500
     plt.plot(time, rpm, label='rpm')
     plt.plot(time, gear, label='gear',color='k')
     plt.plot(time, speed, label='speed')
     plt.plot(time, slip, label='slip')
     # plt.plot(time, clutch, label='clutch')
-    plt.plot(time, power, label='power',color='#FFDE39',linewidth=1)
-    plt.rcParams['savefig.dpi']=600
-    plt.rcParams['figure.dpi']=600
+    plt.plot(time, power, label='power',color='#FFDE39',linewidth=0.5)
+
     plt.legend()
     plt.xticks(np.arange(0, endT-startT, 1))
     plt.yticks(np.arange(0, 11000, 1000))
@@ -99,6 +100,6 @@ if __name__=='__main__':
 
     ls = json.load(open('record.json', 'r', encoding='utf-8'))
     # ls=ls[:200]
-    drawLs(ls, ls[0]['time'], ls[-1]['time'])
+    # drawLs(ls, ls[0]['time'], ls[-1]['time'])
 
     cls=solveGearControlLs(ls)

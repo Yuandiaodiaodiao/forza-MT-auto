@@ -9,7 +9,7 @@ python keyboardloop.py
 如果报缺少包的话就pip install [缺少的包名]   
 一般来说执行一下 
 ```
-pip install argparse pynput numpy matplotlib ctypes win32api win32con
+pip install argparse pynput numpy matplotlib ctypes pywin32
 ```
 差不多能装好 要是报错了就一个一个装
 3.选一辆你要开的车子 找个高速或者机场 开到手动挡挂1档就位  
