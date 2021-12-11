@@ -174,18 +174,15 @@ def main():
     cli_parser.add_argument('-c', '--config_file', type=str,
                             help='path to the YAML configuration file')
 
-    cli_parser.add_argument('port', type=int,
-                            help='port number to listen on')
 
-    cli_parser.add_argument('output_filename', type=str,
-                            help='path to the TSV file we will output')
+
 
     args = cli_parser.parse_args()
 
     if args.verbose:
         logging.basicConfig(level=logging.INFO)
 
-    dump_stream(args.port, args.output_filename, args.format, args.append,
+    dump_stream(5300, 'test.txt', args.format, args.append,
                 args.packet_format, args.config_file)
 
     return()

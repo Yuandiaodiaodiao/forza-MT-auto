@@ -84,9 +84,9 @@ class ForzaDataPacket:
                   'norm_driving_line', 'norm_ai_brake_diff']
     
     def __init__(self, data, packet_format='dash'):
+        packet_format='fh4'
         ## The format this data packet was created with:
         self.packet_format = packet_format
-        
         ## zip makes for convenient flexibility when mapping names to
         ## values in the data packet:
         if packet_format == 'sled':
@@ -99,6 +99,8 @@ class ForzaDataPacket:
                                              unpack(self.dash_format,
                                                     patched_data)):
                 setattr(self, prop_name, prop_value)
+                # if prop_value!=0:
+                #     print(f'{prop_name}={prop_value}')
         else:
             for prop_name, prop_value in zip(self.sled_props + self.dash_props,
                                              unpack(self.dash_format, data)):

@@ -40,7 +40,7 @@ Here are all the potential parameters that can be defined. For some of them, we'
 
 * `wall_clock`: the local time when the packet was logged. This parameter is not transmitted by the game, but is instead calculated by the logging script.
 * `timestamp_ms`: the game's internal timestamp in milliseconds.
-* `engine_max_rpm`: maximum RPM possible of the car's engine.
+* ###### `engine_max_rpm`: maximum RPM possible of the car's engine.
 * `engine_idle_rpm`: idle RPM of the car's engine.
 * `current_engine_rpm`: current RPM of the car's engine.
 * `acceleration_x`
