@@ -32,6 +32,11 @@ ready!!
 劲敌直线加速 第六元素 同样调教 手动(auto)23.953 & 自动24.115
 ![1](./assets/mt2.png)
 ![1](./assets/at2.png)
+
+
+
+## 下面是fork来的仓库 已经改的七七八八了 主要提供了数据接口的协议
+
 # forza_motorsport
 Various utilities to work with data from the Forza Motorsport and Forza Horizon games' data stream.
 
