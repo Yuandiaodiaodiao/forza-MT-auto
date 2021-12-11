@@ -1,3 +1,37 @@
+# forza-MT-auto
+自动操控你的手动挡车车 支持手动和手离 有着更快的速度
+使用方法  
+1.开启数据输出
+![1](./assets/img1.png)
+2. 启动应用  
+安装python 3.8(python官网下载 或者下载anaconda3 64-bit) 然后命令行敲  
+python keyboardloop.py  
+如果报缺少包的话就pip install [缺少的包名]   
+一般来说执行一下 
+```
+pip install argparse pynput numpy matplotlib ctypes win32api win32con
+```
+差不多能装好 要是报错了就一个一个装
+3.选一辆你要开的车子 找个高速或者机场 开到手动挡挂1档就位  
+4.按f10 此时应用会提示
+```
+listening on port 5300
+ready!!
+```
+5.直线加速手动换挡一直加速到最高档 程序会记录你换挡时车辆的性能参数    
+比如6档变速箱就直线加速从1档到6档 挂上6档之后就可以再按一次f10    
+此时应用会对数据进行分析    
+6.按f9即可应用f10调试出来的换挡数据  有本地缓存在record.json里会默认读取你最后一次调试的换挡参数  
+7.f9按一下开再按一下关 f10按一下开录制再按一下录制结束 f9和f10不能同时开(todo 后续兼容同时)  
+8.开车!你会发现你的手动挡也可以自动换挡了(需要保持键盘q e降档升档键位 后续支持改键)  
+
+##效果对比  
+劲敌教堂 第六元素 同样调教 手动(auto)50.225 & 自动50.608
+![1](./assets/mt1.png)
+![1](./assets/at1.png)
+劲敌直线加速 第六元素 同样调教 手动(auto)23.953 & 自动24.115
+![1](./assets/mt2.png)
+![1](./assets/at2.png)
 # forza_motorsport
 Various utilities to work with data from the Forza Motorsport and Forza Horizon games' data stream.
 

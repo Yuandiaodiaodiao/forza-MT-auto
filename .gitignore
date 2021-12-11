@@ -13,3 +13,5 @@ __pycache__/
 # Any compressed file
 *.bz2
 .idea
+build
+dist
