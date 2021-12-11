@@ -98,11 +98,25 @@ def presskey(key):
         else:
             print('anaGear')
             def run():
+                control.isHandle=False
                 control.run(mode='anaGear')
                 print('执行完成')
 
             threadPool.submit(run)
+    elif t == args.handel:
+        print('f8 handel ana')
+        if control.isRun:
+            print('restart')
+            control.isRun=False
+            restart()
+        else:
+            print('anaGear')
+            def run():
+                control.isHandle=True
+                control.run(mode='anaGear')
+                print('执行完成')
 
+            threadPool.submit(run)
 
     elif t == args.stop:
         # 停止当前的动作
