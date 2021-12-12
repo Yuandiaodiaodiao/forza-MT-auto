@@ -69,12 +69,13 @@ def presskey(key):
     if t == args.record:
         print('f10 record')
         if control.isRun:
-            print('stop')
+            print('录制已停止')
             if len(control.recordList)>3:
                 ls=list(control.recordList)
                 stop()
                 control.isRun=False
                 import json
+                print('本次起跑数据已保存到record.json')
                 json.dump(ls,open('record.json','w',encoding='utf-8'))
                 # 分析换挡时机
                 from analyze import solveGearControlLs
@@ -86,41 +87,44 @@ def presskey(key):
             print('submit')
             def run():
                 control.run(mode='record')
-                print('执行完成')
+                print('录制异常退出')
             threadPool.submit(run)
 
     elif t == args.anaGear:
         print('f9 ana')
         if control.isRun:
-            print('restart')
+            print('自动换挡已停止')
             control.isRun=False
             restart()
         else:
             print('anaGear')
             def run():
+                print('手动档启动')
                 control.isHandle=False
                 control.run(mode='anaGear')
-                print('执行完成')
+                print('手动档异常退出')
 
             threadPool.submit(run)
     elif t == args.handel:
         print('f8 handel ana')
         if control.isRun:
-            print('restart')
+            print('自动换挡已停止')
             control.isRun=False
             restart()
         else:
             print('anaGear')
             def run():
+                print('手离启动')
                 control.isHandle=True
                 control.run(mode='anaGear')
-                print('执行完成')
+                print('手离异常退出')
 
             threadPool.submit(run)
 
     elif t == args.stop:
         # 停止当前的动作
         logger.info("stop")
+        control.isRun=False
         restart()
 
     elif t == args.allstop:

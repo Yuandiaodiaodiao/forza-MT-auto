@@ -24,7 +24,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
+from concurrent.futures.thread import ThreadPoolExecutor
 
+from argsolver import args
 import csv
 import logging
 import socket
@@ -49,13 +51,26 @@ def to_str(value):
 
     return ('{}'.format(value))
 
+from functools import wraps
+def trycatch(func):
+    @wraps(func)
+    def with_logging(*args, **kwargs):
+        try:
+
+            return func(*args, **kwargs)
+        except Exception as e:
+            print('出错了')
+            print(str(e))
+    return with_logging
 
 class ForzaControl:
     def __init__(self):
         self.isRun = False
-        self.isHandle=False
-        self.gearLs=[]
-        self.recordList=[]
+        self.isHandle = False
+        self.gearLs = []
+        self.recordList = []
+        self.threadPool = ThreadPoolExecutor(max_workers=3, thread_name_prefix="exec")
+
         pass
 
     def run(self, mode='autoGear'):
@@ -157,10 +172,10 @@ class ForzaControl:
         self.packet_format = packet_format
         message, address = self.server_socket.recvfrom(1024)
         fdp = ForzaDataPacket(message, packet_format=self.packet_format)
-        print('ready!!')
         if self.mode == 'autoGear':
             self.autoGear()
         if self.mode == 'record':
+            print('record ready!! 请起跑')
             self.record()
         if self.mode == 'anaGear':
             self.anaGear()
@@ -280,7 +295,7 @@ class ForzaControl:
 
                     gear -= 1
                     self.targetGear = gear
-
+    @trycatch
     def record(self):
         self.recordList = []
         stop = True
@@ -308,22 +323,42 @@ class ForzaControl:
         return fdp
 
     def upGearHandle(self):
-        pressdown_str('i', cooldown=0.1)
-        press_str('e')
-        time.sleep(0.1)
-        pressup_str('i')
+
+        pressdown_str(args.clutch, cooldown=args.clutchBefore)
+        press_str(args.upgear)
+        time.sleep(args.clutchAfter)
+        pressup_str(args.clutch)
 
     def upGear(self):
-        press_str('e')
+        press_str(args.upgear)
+
 
     def downGearHandle(self):
-        pressdown_str('i', cooldown=0.1)
-        press_str('q')
-        time.sleep(0.1)
-        pressup_str('i')
+        def downAcc():
+            if args.accelAfterGearDown > 0:
+                print('降档补油')
+                # 是降档 补油
+                pressdown_str(args.accelKey)
+                time.sleep(args.accelAfterGearDown)
+                pressup_str(args.accelKey)
+        self.threadPool.submit(downAcc)
+        pressdown_str(args.clutch, cooldown=args.clutchBefore)
+
+        press_str(args.downgear)
+
+        time.sleep(args.clutchAfter)
+        pressup_str(args.clutch)
 
     def downGear(self):
-        press_str('q')
+        def downAcc():
+            if args.accelAfterGearDown > 0:
+                print('手动挡降档补油')
+                # 是降档 补油
+                pressdown_str(args.accelKey)
+                time.sleep(args.accelAfterGearDown)
+                pressup_str(args.accelKey)
+        self.threadPool.submit(downAcc)
+        press_str(args.downgear)
 
     def autoUp(self):
         if self.isHandle:
@@ -340,19 +375,21 @@ class ForzaControl:
     def loadGearlsFromFile(self):
         from analyze import solveGearControlLs
         import json
+        print('从record.json 加载起跑数据开始分析')
         ls = json.load(open('record.json', 'r', encoding='utf-8'))
         gearls = solveGearControlLs(ls)
         self.gearLs = gearls
-
+        print('分析完成')
+    @trycatch
     def anaGear(self):
-        if len(self.gearLs)==0:
+        if len(self.gearLs) == 0:
             self.loadGearlsFromFile()
             print('load cache')
 
         fdp = self.getFdp()
         targetGear = fdp.gear
         lastGear = 0
-        coolDownLock=time.time()
+        coolDownLock = time.time()
         gearLs = self.gearLs
         while True:
             fdp = self.getFdp()
@@ -371,11 +408,12 @@ class ForzaControl:
                 print('gearChange')
                 if targetGear == gear:
                     # 自动换挡成功
+
                     pass
                 else:
                     # 是用户手动换挡的
                     # 同步档位 加cooldown
-                    coolDownLock=time.time()+5
+                    coolDownLock = time.time() + args.playerCoolDown
                     targetGear = gear
             lastGear = gear
             gearfix = gear
@@ -396,7 +434,7 @@ class ForzaControl:
                     slip = (fdp.tire_slip_ratio_RL + fdp.tire_slip_ratio_RR) / 2
                     # 没滑并且到转速 并且踩油门 升档
                     # print(f'acc={accel} rpm={rpm} targetRpm={gearNowConfig["rpm"]}')
-                    if rpm > gearNowConfig['rpm']*0.99 and slip < 1 and accel > 100:
+                    if rpm > gearNowConfig['rpm'] * 0.99 and slip < 1 and accel > 100:
                         gearfix = gear + 1
                     elif speed > gearNowConfig['speed']:
                         # 速度超过了 升档
@@ -408,26 +446,24 @@ class ForzaControl:
                     # 按速度降档 转速可以不管
                     if speed + speedGap < gearLowConfig['speed']:
                         gearfix = gear - 1
-            cooldownup = 1
-            cooldowndown = 0.5
+            cooldownup = args.upGearCoolDown
+            cooldowndown = args.downGearCoolDown
 
             while gearfix != gear and gear == targetGear:
-                if time.time()<coolDownLock:
+                if time.time() < coolDownLock:
                     break
                 if gear < gearfix:
                     self.autoUp()
                     print(f'up gear={gear} fix={gearfix} rpm={rpm}%')
-                    coolDownLock = time.time()+cooldownup
+                    coolDownLock = time.time() + cooldownup
 
-                    gear += 1
-                    targetGear = gear
-                else:
+                    targetGear = gear+1
+                elif gear > gearfix >= args.minDownGear:
                     self.autoDown()
                     print(f'down gear={gear} fix={gearfix} rpm={rpm}%')
-                    coolDownLock = time.time()+cooldowndown
+                    coolDownLock = time.time() + cooldowndown
 
-                    gear -= 1
-                    targetGear = gear
+                    targetGear = gear-1
 
 
 if __name__ == "__main__":

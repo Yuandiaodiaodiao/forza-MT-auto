@@ -1,4 +1,24 @@
 # forza-MT-auto
+## 更新日志
+argsolver.py里可以改键  
+降档补油参数也在argsolver.py里  
+离合按键映射也在argsolver.py里  
+手离换挡时机也在argsolver.py里  
+还有好多自己去里面看一下 直接改default的值就行了
+```
+parser.add_argument('--clutch', type=str, help='离合按键',default="i")
+parser.add_argument('--upgear', type=str, help='升档',default="e")
+parser.add_argument('--downgear', type=str, help='降档',default="q")
+parser.add_argument('--clutchBefore', type=float, help='踩下离合到换挡的延迟(秒)',default=0.1)
+parser.add_argument('--clutchAfter', type=float, help='换挡到抬起离合的延迟(秒)',default=0.1)
+parser.add_argument('--downGearCoolDown', type=float, help='降档的cd 连续降档间隔时长',default=0.5)
+parser.add_argument('--upGearCoolDown', type=float, help='升档的cd 连续升档间隔时长',default=1)
+parser.add_argument('--playerCoolDown', type=float, help='玩家介入换挡后程序发呆的时间',default=5)
+parser.add_argument('--accelAfterGearDown', type=float, help='降档补油时长 0是关闭',default=0)
+parser.add_argument('--accelKey', type=str, help='油门按键',default='w')
+```
+
+## 使用方法
 [b站演示](https://www.bilibili.com/video/BV1fM4y1F7R8/)  
 自动操控你的手动挡车车 支持手动和手离 有着更快的速度
 使用方法  
