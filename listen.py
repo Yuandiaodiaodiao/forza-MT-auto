@@ -315,6 +315,7 @@ class ForzaControl:
                 'slip': min(1.1, (fdp.tire_slip_ratio_RL + fdp.tire_slip_ratio_RR) / 2),
                 'clutch': fdp.clutch,
                 'power': fdp.power / 1000,
+                'car_ordinal':fdp.car_ordinal,
             })
 
     def getFdp(self):
@@ -372,21 +373,26 @@ class ForzaControl:
         else:
             self.downGear()
 
-    def loadGearlsFromFile(self):
+    def loadGearlsFromFile(self,car_ordinal):
         from analyze import solveGearControlLs
         import json
-        print('从record.json 加载起跑数据开始分析')
-        ls = json.load(open('record.json', 'r', encoding='utf-8'))
+        carPath = f'./cars/record_{car_ordinal}.json'
+
+        print(f'从{carPath} 加载起跑数据开始分析')
+        ls = json.load(open(carPath, 'r', encoding='utf-8'))
         gearls = solveGearControlLs(ls)
         self.gearLs = gearls
         print('分析完成')
     @trycatch
     def anaGear(self):
-        if len(self.gearLs) == 0:
-            self.loadGearlsFromFile()
-            print('load cache')
 
         fdp = self.getFdp()
+        car_ordinal=fdp.car_ordinal
+        if len(self.gearLs) == 0:
+            self.loadGearlsFromFile(car_ordinal)
+            print('load cache')
+
+
         targetGear = fdp.gear
         lastGear = 0
         coolDownLock = time.time()

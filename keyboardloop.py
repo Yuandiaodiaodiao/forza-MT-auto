@@ -75,8 +75,15 @@ def presskey(key):
                 stop()
                 control.isRun=False
                 import json
-                print('本次起跑数据已保存到record.json')
-                json.dump(ls,open('record.json','w',encoding='utf-8'))
+                car_ordinal=ls[0]['car_ordinal']
+                try:
+                    import os
+                    os.mkdir('cars')
+                except:
+                    pass
+                carPath=f'./cars/record_{car_ordinal}.json'
+                print(f'本次起跑数据已保存到{carPath}')
+                json.dump(ls,open(carPath,'w',encoding='utf-8'))
                 # 分析换挡时机
                 from analyze import solveGearControlLs
                 gearls=solveGearControlLs(ls)
