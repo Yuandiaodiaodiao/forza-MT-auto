@@ -36,7 +36,10 @@ python keyboardloop.py
 ```
 pip install argparse pynput numpy matplotlib ctypes pywin32
 ```
-差不多能装好 要是报错了就一个一个装
+差不多能装好 要是报错了就一个一个装  
+有可能会报网络相关的错误 这时候用清华源试试  
+后面的那个pynput换成你想装的包  
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple pynput  
 3.选一辆你要开的车子 找个高速或者机场 开到手动挡挂1档就位  
 4.按f10 此时应用会提示
 ```
