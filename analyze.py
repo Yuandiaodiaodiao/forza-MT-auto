@@ -1,4 +1,4 @@
-
+from functools import wraps
 # print(js)
 def trycatch(func):
     @wraps(func)
