@@ -59,7 +59,7 @@ ready!!
 ```
 upGearHandle 部分
 ```
-
+3.手离参数在argsolver里
 ##效果对比  
 劲敌教堂 第六元素 同样调教 手动(auto)50.225 & 自动50.608
 ![1](./assets/mt1.png)
