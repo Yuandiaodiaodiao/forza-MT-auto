@@ -1,7 +1,17 @@
 
 # print(js)
+def trycatch(func):
+    @wraps(func)
+    def with_logging(*args, **kwargs):
+        try:
 
+            return func(*args, **kwargs)
+        except Exception as e:
+            print('出错了')
+            print(str(e))
+    return with_logging
 
+@trycatch
 def drawLs(ls,startT,endT):
     import numpy as np
     import matplotlib.pyplot as plt
