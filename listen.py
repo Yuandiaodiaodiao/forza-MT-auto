@@ -51,7 +51,10 @@ def to_str(value):
 
     return ('{}'.format(value))
 
+
 from functools import wraps
+
+
 def trycatch(func):
     @wraps(func)
     def with_logging(*args, **kwargs):
@@ -61,7 +64,9 @@ def trycatch(func):
         except Exception as e:
             print('出错了')
             print(str(e))
+
     return with_logging
+
 
 class ForzaControl:
     def __init__(self):
@@ -295,6 +300,7 @@ class ForzaControl:
 
                     gear -= 1
                     self.targetGear = gear
+
     @trycatch
     def record(self):
         self.recordList = []
@@ -315,7 +321,7 @@ class ForzaControl:
                 'slip': min(1.1, (fdp.tire_slip_ratio_RL + fdp.tire_slip_ratio_RR) / 2),
                 'clutch': fdp.clutch,
                 'power': fdp.power / 1000,
-                'car_ordinal':fdp.car_ordinal,
+                'car_ordinal': fdp.car_ordinal,
             })
 
     def getFdp(self):
@@ -333,7 +339,6 @@ class ForzaControl:
     def upGear(self):
         press_str(args.upgear)
 
-
     def downGearHandle(self):
         def downAcc():
             if args.accelAfterGearDown > 0:
@@ -342,6 +347,7 @@ class ForzaControl:
                 pressdown_str(args.accelKey)
                 time.sleep(args.accelAfterGearDown)
                 pressup_str(args.accelKey)
+
         self.threadPool.submit(downAcc)
         pressdown_str(args.clutch, cooldown=args.clutchBefore)
 
@@ -358,6 +364,7 @@ class ForzaControl:
                 pressdown_str(args.accelKey)
                 time.sleep(args.accelAfterGearDown)
                 pressup_str(args.accelKey)
+
         self.threadPool.submit(downAcc)
         press_str(args.downgear)
 
@@ -373,25 +380,33 @@ class ForzaControl:
         else:
             self.downGear()
 
-    def loadGearlsFromFile(self,car_ordinal):
+    def loadGearlsFromFile(self, car_ordinal):
         from analyze import solveGearControlLs
         import json
         carPath = f'./cars/record_{car_ordinal}.json'
 
         print(f'从{carPath} 加载起跑数据开始分析')
-        ls = json.load(open(carPath, 'r', encoding='utf-8'))
-        gearls = solveGearControlLs(ls)
-        self.gearLs = gearls
-        print('分析完成')
+        try:
+
+            ls = json.load(open(carPath, 'r', encoding='utf-8'))
+            gearls = solveGearControlLs(ls)
+            self.gearLs = gearls
+            print('分析完成')
+        except Exception as e:
+            if car_ordinal == 0:
+                print('找不到车辆id 若请确认车开在街上')
+            else:
+                print('未找到车辆起跑数据 请按照readme.md 按f10进行起步测试')
+            raise e
+
     @trycatch
     def anaGear(self):
 
         fdp = self.getFdp()
-        car_ordinal=fdp.car_ordinal
+        car_ordinal = fdp.car_ordinal
         if len(self.gearLs) == 0:
             self.loadGearlsFromFile(car_ordinal)
             print('load cache')
-
 
         targetGear = fdp.gear
         lastGear = 0
@@ -463,13 +478,13 @@ class ForzaControl:
                     print(f'up gear={gear} fix={gearfix} rpm={rpm}%')
                     coolDownLock = time.time() + cooldownup
 
-                    targetGear = gear+1
+                    targetGear = gear + 1
                 elif gear > gearfix >= args.minDownGear:
                     self.autoDown()
                     print(f'down gear={gear} fix={gearfix} rpm={rpm}%')
                     coolDownLock = time.time() + cooldowndown
 
-                    targetGear = gear-1
+                    targetGear = gear - 1
 
 
 if __name__ == "__main__":
