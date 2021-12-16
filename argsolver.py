@@ -29,10 +29,11 @@ parser.add_argument('--playerCoolDown', type=float, help='玩家介入换挡后�
 # 降档时下面两条并行
 # if accelAfterGearDown>0 按离合 sleep(accelBeforeGearDown) 按油门 sleep(accelAfterGearDown) 抬油门
 # 按离合 sleep(clutchBefore) 换挡 sleep(clutchAfter) 抬油门
-parser.add_argument('--accelAfterGearDown', type=float, help='降档补油时长 0是关闭(秒)', default=0)
+parser.add_argument('--accelAfterGearDown', type=float, help='降档补油时长 0是关闭(秒)', default=0.1)
 parser.add_argument('--accelBeforeGearDown', type=float, help='从按下离合到启动降档补油的时长(秒)', default=0.05)
 parser.add_argument('--accelKey', type=str, help='油门按键', default='w')
 # 有人说后驱降档滑了
 parser.add_argument('--minDownGear', type=int, help='最低降档降到的档位', default=1)
+parser.add_argument('--minSpeed', type=int, help='当速度低于这个值时换挡系统不会工作', default=1)
 
 args = parser.parse_args()

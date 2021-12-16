@@ -440,7 +440,7 @@ class ForzaControl:
             gearfix = gear
 
             # 低速不处理
-            if speed < 10:
+            if speed < args.minSpeed:
                 continue
             # 用户挂倒档了 不管
             if gear <= 0: continue
@@ -464,6 +464,7 @@ class ForzaControl:
                     pass
                 if gear > 1:
                     gearLowConfig = next(item for item in gearLs if item['gear'] == gear - 1)
+                    # print(gearLowConfig)
                     # 按速度降档 转速可以不管
                     if speed + speedGap < gearLowConfig['speed']:
                         gearfix = gear - 1
