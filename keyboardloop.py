@@ -88,6 +88,7 @@ def presskey(key):
                 from analyze import solveGearControlLs
                 gearls=solveGearControlLs(ls)
                 control.gearLs=gearls
+                print('录制完成 f9手动 f8手离')
             restart()
             control.isRun=False
         else:
@@ -139,7 +140,6 @@ def presskey(key):
         stop()
         exit(0)
         raise Exception
-
 
 if __name__ == '__main__':
     logger.info("start!")

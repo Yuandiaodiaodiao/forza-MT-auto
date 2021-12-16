@@ -404,9 +404,9 @@ class ForzaControl:
 
         fdp = self.getFdp()
         car_ordinal = fdp.car_ordinal
-        if len(self.gearLs) == 0:
-            self.loadGearlsFromFile(car_ordinal)
-            print('load cache')
+        self.loadGearlsFromFile(car_ordinal)
+
+        print('load cache')
 
         targetGear = fdp.gear
         lastGear = 0
