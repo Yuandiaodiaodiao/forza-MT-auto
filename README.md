@@ -1,4 +1,6 @@
 # forza-MT-auto
+## Forza Horizon5 自动手动挡 支持键盘,手柄,windows
+
 ## 更新日志
 每辆车的数据会在car文件夹里的record_车辆编号.json  
 也就是说如果你调试好的一辆车 切回来的时候回自动读取进行分析  
