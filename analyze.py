@@ -1,4 +1,6 @@
 from functools import wraps
+
+
 # print(js)
 def trycatch(func):
     @wraps(func)
@@ -9,10 +11,12 @@ def trycatch(func):
         except Exception as e:
             print('出错了')
             print(str(e))
+
     return with_logging
 
+
 @trycatch
-def drawLs(ls,startT,endT):
+def drawLs(ls, startT, endT):
     import numpy as np
     import matplotlib.pyplot as plt
 
@@ -26,19 +30,19 @@ def drawLs(ls,startT,endT):
     power = np.array([item.get('power') * 10 for index, item in enumerate(ls)])
     time0 = startT
     time = np.where(time > 0, time - time0, 0)
-    plt.rcParams['savefig.dpi']=500
-    plt.rcParams['figure.dpi']=500
+    plt.rcParams['savefig.dpi'] = 500
+    plt.rcParams['figure.dpi'] = 500
     plt.plot(time, rpm, label='rpm')
-    plt.plot(time, gear, label='gear',color='k')
+    plt.plot(time, gear, label='gear', color='k')
     plt.plot(time, speed, label='speed')
     plt.plot(time, slip, label='slip')
     # plt.plot(time, clutch, label='clutch')
-    plt.plot(time, power, label='power',color='#FFDE39',linewidth=0.5)
+    plt.plot(time, power, label='power', color='#FFDE39', linewidth=0.5)
 
     plt.legend()
-    plt.xticks(np.arange(0, endT-startT, 1))
+    plt.xticks(np.arange(0, endT - startT, 1))
     plt.yticks(np.arange(0, 11000, 1000))
-    plt.ylim(-500,11000)
+    plt.ylim(-500, 11000)
     plt.show()
 
 
@@ -61,9 +65,11 @@ def genGearLs(ls):
             gearLs.append(item)
             ls[index] = item
     return gearLs
+
+
 # 向前连续一段时间找全部符合要求的
 # 找到换挡时机之前最好的启动换挡机会
-def genGearControlLs(ls,gearLs):
+def genGearControlLs(ls, gearLs):
     gearControlLs = []
     for gearItem in gearLs:
         lastIndex = gearItem['index']
@@ -84,7 +90,7 @@ def genGearControlLs(ls,gearLs):
                     # print(newRegion[0])
                     lastPIndex = newRegion[-1]['index']
                     avgPower = sum(map(lambda x: x['power'], newRegion)) / len(newRegion)
-                    while ls[lastPIndex]['power'] > avgPower * 0.9 and ls[lastPIndex]['gear']==gearItem['gear']:
+                    while ls[lastPIndex]['power'] > avgPower * 0.9 and ls[lastPIndex]['gear'] == gearItem['gear']:
                         lastPIndex += 1
                     global powerLast
                     powerLast = ls[lastPIndex]
@@ -93,7 +99,7 @@ def genGearControlLs(ls,gearLs):
                     break
                 nowStep += 1
 
-        powerLast=findLastPower()
+        powerLast = findLastPower()
 
         # powerLast 代表最大换挡功率的位置
         maxRpm = powerLast['rpm']
@@ -101,15 +107,19 @@ def genGearControlLs(ls,gearLs):
         print(f'gear={powerLast["gear"]}maxRpm={maxRpm} speed={gearSpeed}')
         gearControlLs.append(powerLast)
     return gearControlLs
+
+
 def solveGearControlLs(ls):
     gearLs = genGearLs(ls)
     controlLs = genGearControlLs(ls, gearLs)
     return controlLs
-if __name__=='__main__':
+
+
+if __name__ == '__main__':
     import json
 
     ls = json.load(open('record.json', 'r', encoding='utf-8'))
     # ls=ls[:200]
     # drawLs(ls, ls[0]['time'], ls[-1]['time'])
 
-    cls=solveGearControlLs(ls)
+    cls = solveGearControlLs(ls)

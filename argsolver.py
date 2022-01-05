@@ -25,7 +25,7 @@ parser.add_argument('--clutchBefore', type=float, help='踩下离合到换挡的
 parser.add_argument('--clutchAfter', type=float, help='换挡到抬起离合的延迟(秒)', default=0.1)
 parser.add_argument('--downGearCoolDown', type=float, help='降档的cd 连续降档间隔时长(秒)', default=0.5)
 parser.add_argument('--upGearCoolDown', type=float, help='升档的cd 连续升档间隔时长(秒)', default=1)
-parser.add_argument('--playerCoolDown', type=float, help='玩家介入换挡后程序发呆的时间(秒)', default=5)
+parser.add_argument('--playerCoolDown', type=float, help='玩家介入换挡后程序发呆的时间(秒)', default=1)
 # 降档时下面两条并行
 # if accelAfterGearDown>0 按离合 sleep(accelBeforeGearDown) 按油门 sleep(accelAfterGearDown) 抬油门
 # 按离合 sleep(clutchBefore) 换挡 sleep(clutchAfter) 抬油门
@@ -35,5 +35,7 @@ parser.add_argument('--accelKey', type=str, help='油门按键', default='w')
 # 有人说后驱降档滑了
 parser.add_argument('--minDownGear', type=int, help='最低降档降到的档位', default=1)
 parser.add_argument('--minSpeed', type=int, help='当速度低于这个值时换挡系统不会工作', default=1)
+
+parser.add_argument('--onlyDown', type=int, help='只降档不升档', default=0)
 
 args = parser.parse_args()

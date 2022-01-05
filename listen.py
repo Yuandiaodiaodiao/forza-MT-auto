@@ -475,7 +475,8 @@ class ForzaControl:
                 if time.time() < coolDownLock:
                     break
                 if gear < gearfix:
-                    self.autoUp()
+                    if args.onlyDown != 1:
+                        self.autoUp()
                     print(f'up gear={gear} fix={gearfix} rpm={rpm}%')
                     coolDownLock = time.time() + cooldownup
 

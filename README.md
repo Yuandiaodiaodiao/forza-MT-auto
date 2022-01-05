@@ -1,5 +1,8 @@
 # forza-MT-auto
 ## 更新日志
+
+只降档不升档模式: argsolver.py里 onlyDown设为1 playerCoolDown适当减小 如0.1
+
 每辆车的数据会在car文件夹里的record_车辆编号.json  
 也就是说如果你调试好的一辆车 切回来的时候回自动读取进行分析  
 注意离合时机和是否降档补油是统一配置的 json里是起跑数据而已 现场分析  
