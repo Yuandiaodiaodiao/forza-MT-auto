@@ -1,5 +1,6 @@
 from functools import wraps
 
+from argsolver import args
 
 # print(js)
 def trycatch(func):
@@ -10,6 +11,8 @@ def trycatch(func):
             return func(*args, **kwargs)
         except Exception as e:
             print('出错了')
+            print(e)
+            raise e
             print(str(e))
 
     return with_logging
@@ -48,7 +51,8 @@ def drawLs(ls, startT, endT):
 
 # 找到换挡时机
 def genGearLs(ls):
-    drawLs(ls, ls[0]['time'], ls[-1]['time'])
+    if args.enablePlot:
+        drawLs(ls, ls[0]['time'], ls[-1]['time'])
     try:
         zeroTime = next(item for item in ls if item['speed'] > 0.001)
         hunTime = next(item for item in ls if item['speed'] > 100)

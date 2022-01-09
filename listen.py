@@ -37,6 +37,7 @@ import datetime as dt
 from fdp import ForzaDataPacket
 from keyboardsim import press_str, pressup_str, pressdown_str
 from math import floor
+import queue
 
 
 def to_str(value):
@@ -63,9 +64,46 @@ def trycatch(func):
             return func(*args, **kwargs)
         except Exception as e:
             print('出错了')
+            print(e)
+            raise e
             print(str(e))
 
     return with_logging
+
+
+import threading
+
+
+class StopableThredPool:
+
+    def __init__(self):
+        self.running=False
+        self.threadPool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="execx")
+
+    def stop(self):
+
+        def get_thread_id(thread):
+            for id, t in threading._active.items():
+                if t is thread:
+                    return id
+
+        def raise_exception(thread_id):
+            import ctypes
+            res = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id,
+                                                             ctypes.py_object(SystemExit))
+            if res > 1:
+                ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0)
+                print('Exception raise failure')
+
+        for thread in self.threadPool._threads:
+            id = get_thread_id(thread)
+            raise_exception(id)
+
+        self.threadPool.shutdown(wait=False)
+
+    def restart(self):
+        self.stop()
+        self.threadPool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="exec")
 
 
 class ForzaControl:
@@ -75,14 +113,15 @@ class ForzaControl:
         self.gearLs = []
         self.recordList = []
         self.threadPool = ThreadPoolExecutor(max_workers=3, thread_name_prefix="exec")
+        self.messageThread = StopableThredPool()
+        self.fdpQueue = queue.Queue(maxsize=0)
 
         pass
 
-    def run(self, mode='autoGear'):
-        print(f'run{mode}')
+    def run(self, mode):
+        print(f'run {mode} 手动挡{self.isHandle}')
         self.isRun = True
         self.mode = mode
-        print(f'run{mode}')
         self.main()
 
     def main(self):
@@ -144,170 +183,73 @@ class ForzaControl:
         :param config_file: path to the YAML configuration file
         :type config_file: str
         '''
+        if self.messageThread.running == False:
+            if config_file:
+                import yaml
+                with open(config_file) as f:
+                    config = yaml.safe_load(f)
 
-        if config_file:
-            import yaml
-            with open(config_file) as f:
-                config = yaml.safe_load(f)
+                ## The configuration can override everything
+                if 'port' in config:
+                    port = config['port']
 
-            ## The configuration can override everything
-            if 'port' in config:
-                port = config['port']
+                if 'output_filename' in config:
+                    output_filename = config['output_filename']
 
-            if 'output_filename' in config:
-                output_filename = config['output_filename']
+                if 'format' in config:
+                    format = config['format']
 
-            if 'format' in config:
-                format = config['format']
+                if 'append' in config:
+                    append = config['append']
 
-            if 'append' in config:
-                append = config['append']
+                if 'packet_format' in config:
+                    packet_format = config['packet_format']
 
-            if 'packet_format' in config:
-                packet_format = config['packet_format']
+            params = ForzaDataPacket.get_props(packet_format=packet_format)
+            if config_file and 'parameter_list' in config:
+                params = config['parameter_list']
 
-        params = ForzaDataPacket.get_props(packet_format=packet_format)
-        if config_file and 'parameter_list' in config:
-            params = config['parameter_list']
+            self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.server_socket.bind(('', port))
 
-        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.server_socket.bind(('', port))
+            logging.info('listening on port {}'.format(port))
+            self.packet_format = packet_format
 
-        logging.info('listening on port {}'.format(port))
-        self.packet_format = packet_format
-        message, address = self.server_socket.recvfrom(1024)
-        fdp = ForzaDataPacket(message, packet_format=self.packet_format)
-        if self.mode == 'autoGear':
-            self.autoGear()
+            print('初始化消息队列')
+            # self.messageThread.restart()
+            # time.sleep(1)
+            def getFdp():
+                print('get Fdp thread启动')
+                while True:
+                    message, address = self.server_socket.recvfrom(1024)
+                    fdp = ForzaDataPacket(message, packet_format=self.packet_format)
+                    self.last_car_ordinal=fdp.car_ordinal or self.last_car_ordinal
+                    if self.fdpQueue.qsize() > 10:
+                        self.fdpQueue.get()
+                    self.fdpQueue.put(fdp)
+
+
+        # 启动消息队列
+            self.messageThread.threadPool.submit(getFdp)
+            self.messageThread.running=True
+
+
         if self.mode == 'record':
             print('record ready!! 请起跑')
             self.record()
         if self.mode == 'anaGear':
+            print('自动换挡 启动')
             self.anaGear()
 
-    def autoGear(self):
-        message, address = self.server_socket.recvfrom(1024)
-        fdp = ForzaDataPacket(message, packet_format=self.packet_format)
-        self.fdp = fdp
-        self.targetGear = fdp.gear
-        self.lastGear = 0
-        self.lastCoolDown = time.time()
-        while True:
-            message, address = self.server_socket.recvfrom(1024)
-            self.fdp = ForzaDataPacket(message, packet_format=self.packet_format)
-            fdp = self.fdp
-            self.speed = fdp.speed * 3.6
-            self.gear = fdp.gear
-            if self.mode == 'autoGear':
-                self.autoGear()
-            if self.mode == 'record':
-                self.record()
 
-            gears = [[], [0, 50], [45, 80], [72, 105], [97, 125], [117, 145], [137, 170], [163, 199], [193, 220]]
-            speed = self.speed
-
-            gear = fdp.gear
-            if gear == 0: return
-            if time.time() - self.lastCoolDown > 1:
-                # 换挡同步
-                self.targetGear = gear
-            if gear != self.lastGear:
-                print('gearChange')
-                if self.targetGear == gear:
-                    # 换挡成功
-                    pass
-                else:
-                    # 同步档位 加cooldown
-                    self.targetGear = gear
-            self.lastGear = gear
-            gearfix = gear
-
-            maxrpm = fdp.engine_max_rpm + 1
-            rpm = fdp.current_engine_rpm
-            rpmp = rpm / maxrpm * 100
-            print(f'{floor(rpm / maxrpm * 100)}% {rpm} {maxrpm}')
-            # continue
-            if self.targetGear == 0:
-                self.targetGear = 1
-            if speed < 10:
-                return
-            if gear <= 0: return
-
-            # print(f' gear={gear} fix={gearfix} target={self.targetGear}')
-            mode = 'rpm'
-            cooldownt = 1
-            if mode == 'rpmp':
-                rpms = [[], [0, 90], [55, 90], [60, 90], [60, 90], [60, 90], [60, 90], [60, 90], [60, 90], [60, 90],
-                        [60, 100]]
-                if rpms[gear][0] < rpmp < rpms[gear][1]:
-                    gearfix = gear
-                    pass
-                else:
-                    for i in range(1, len(rpms)):
-                        [l, h] = rpms[i]
-                        # print(f'{l}<{h}')
-                        if l < rpmp < h:
-                            gearfix = i
-                            # print(f'fix{i}')
-                            break
-            elif mode == 'rpm':
-                rpms = [[], [-10, 74], [53, 76], [60, 78], [60, 78], [60, 78], [60, 78], [60, 78], [60, 78],
-                        [60, 78]]
-                if rpms[gear][0] < rpm / 100 < rpms[gear][1]:
-                    gearfix = gear
-                    # print('pass')
-                    pass
-                else:
-                    if rpm / 100 > rpms[gear][1]:
-                        gearfix = gear + 1
-                    elif rpm / 100 < rpms[gear][0]:
-                        gearfix = gear - 1
-
-
-            else:
-                if gears[gear][0] < speed < gears[gear][1]:
-                    gearfix = gear
-                    pass
-                else:
-                    for i in range(1, len(gears)):
-                        [l, h] = gears[i]
-                        # print(f'{l}<{h}')
-                        if l < speed < h:
-                            gearfix = i
-                            # print(f'fix{i}')
-                            break
-            while gearfix != gear and gear == self.targetGear:
-                if time.time() - self.lastCoolDown < cooldownt:
-                    # print('jump')
-                    break
-                self.lastCoolDown = time.time()
-                if gear < gearfix:
-                    pressdown_str('i', cooldown=0.1)
-                    press_str('e')
-                    time.sleep(0.1)
-
-                    pressup_str('i')
-                    print(f'up gear={gear} fix={gearfix} rpm={rpmp}%')
-
-                    gear += 1
-                    self.targetGear = gear
-                else:
-                    pressdown_str('i', cooldown=0.1)
-                    press_str('q')
-                    time.sleep(0.1)
-                    pressup_str('i')
-                    print(f'down gear={gear} fix={gearfix} rpm={rpmp}%')
-
-                    gear -= 1
-                    self.targetGear = gear
 
     @trycatch
     def record(self):
         self.recordList = []
         stop = True
         while True:
-            message, address = self.server_socket.recvfrom(1024)
-            fdp = ForzaDataPacket(message, packet_format=self.packet_format)
+
+            fdp = self.getFdp()
             # print(f'RL={fdp.tire_slip_ratio_RL} speed={fdp.speed}')
             if fdp.tire_slip_ratio_RL > 0.01 or fdp.speed > 0.01:
                 stop = False
@@ -325,9 +267,9 @@ class ForzaControl:
             })
 
     def getFdp(self):
-        message, address = self.server_socket.recvfrom(1024)
-        fdp = ForzaDataPacket(message, packet_format=self.packet_format)
-        return fdp
+        while self.fdpQueue.qsize() > 1:
+            self.fdpQueue.get()
+        return self.fdpQueue.get()
 
     def upGearHandle(self):
 
@@ -339,33 +281,25 @@ class ForzaControl:
     def upGear(self):
         press_str(args.upgear)
 
-    def downGearHandle(self):
-        def downAcc():
-            if args.accelAfterGearDown > 0:
-                print('降档补油')
-                # 是降档 补油
-                pressdown_str(args.accelKey)
-                time.sleep(args.accelAfterGearDown)
-                pressup_str(args.accelKey)
-
-        self.threadPool.submit(downAcc)
+    def downGearHandle(self,enableDownAcc=True):
+        self.downAcc(enableDownAcc)
         pressdown_str(args.clutch, cooldown=args.clutchBefore)
 
         press_str(args.downgear)
 
         time.sleep(args.clutchAfter)
         pressup_str(args.clutch)
-
-    def downGear(self):
-        def downAcc():
-            if args.accelAfterGearDown > 0:
-                print('手动挡降档补油')
+    def downAcc(self,enableDownAcc=True):
+        if enableDownAcc==True and args.accelAfterGearDown > 0:
+            def downAcc():
+                print('降档补油')
                 # 是降档 补油
                 pressdown_str(args.accelKey)
                 time.sleep(args.accelAfterGearDown)
                 pressup_str(args.accelKey)
-
-        self.threadPool.submit(downAcc)
+            self.threadPool.submit(downAcc)
+    def downGear(self,enableDownAcc=True):
+        self.downAcc(enableDownAcc)
         press_str(args.downgear)
 
     def autoUp(self):
@@ -374,11 +308,11 @@ class ForzaControl:
         else:
             self.upGear()
 
-    def autoDown(self):
+    def autoDown(self,enableDownAcc=True):
         if self.isHandle:
-            self.downGearHandle()
+            self.downGearHandle(enableDownAcc)
         else:
-            self.downGear()
+            self.downGear(enableDownAcc)
 
     def loadGearlsFromFile(self, car_ordinal):
         from analyze import solveGearControlLs
@@ -403,7 +337,7 @@ class ForzaControl:
     def anaGear(self):
 
         fdp = self.getFdp()
-        car_ordinal = fdp.car_ordinal
+        car_ordinal = self.last_car_ordinal or fdp.car_ordinal
         self.loadGearlsFromFile(car_ordinal)
 
         print('load cache')
@@ -412,6 +346,7 @@ class ForzaControl:
         lastGear = 0
         coolDownLock = time.time()
         gearLs = self.gearLs
+        manyDown = False
         while True:
             fdp = self.getFdp()
             speed = fdp.speed * 3.6
@@ -419,12 +354,27 @@ class ForzaControl:
             rpm = fdp.current_engine_rpm
             accel = fdp.accel
             # 没起车不处理
-            if gear == 0: continue
+            # if gear == 0: continue
             # 过长时间没有动作就同步档位
             if time.time() - coolDownLock > 2:
                 # 换挡同步
                 targetGear = gear
             # 检测到换挡
+            if manyDown:
+
+                if gear > targetGear:
+                    self.autoDown(False)
+                    sleepTime=0.05
+                    if gear<=3:
+                        sleepTime=0.3
+                    time.sleep(sleepTime)
+                    continue
+                elif gear <= 0:
+                    self.autoUp()
+                    manyDown = False
+                    continue
+                manyDown = False
+
             if gear != lastGear:
                 print('gearChange')
                 if targetGear == gear:
@@ -446,8 +396,8 @@ class ForzaControl:
             if gear <= 0: continue
 
             mode = 'auto'
-            # 预期的换挡时间
-            speedGap = 10
+            # 低于档位最低速度的策略 kmh
+            speedGap = args.speedGap
             if mode == 'auto':
                 try:
 
@@ -463,11 +413,17 @@ class ForzaControl:
                 except:
                     pass
                 if gear > 1:
-                    gearLowConfig = next(item for item in gearLs if item['gear'] == gear - 1)
-                    # print(gearLowConfig)
-                    # 按速度降档 转速可以不管
-                    if speed + speedGap < gearLowConfig['speed']:
-                        gearfix = gear - 1
+                    gearLowConfig = None
+                    for i in range(1, 10):
+                        try:
+                            gearLowConfig = next(item for item in gearLs if item['gear'] == gear - i)
+                            if speed + speedGap < gearLowConfig['speed']:
+                                gearfix = gear - i
+                        except:
+                            pass
+                    if gearLowConfig is None:
+                        print('降档策略执行失败')
+
             cooldownup = args.upGearCoolDown
             cooldowndown = args.downGearCoolDown
 
@@ -482,11 +438,18 @@ class ForzaControl:
 
                     targetGear = gear + 1
                 elif gear > gearfix >= args.minDownGear:
+                    # 降档多次
+                    if gear - gearfix > 1 and gearfix == 1:
+                        gearfix = 2
+                    if gear - gearfix > 1:
+                        manyDown = True
+                        print(f'连续降档*{gear - gearfix}')
+
                     self.autoDown()
                     print(f'down gear={gear} fix={gearfix} rpm={rpm}%')
                     coolDownLock = time.time() + cooldowndown
 
-                    targetGear = gear - 1
+                    targetGear = gearfix
 
 
 if __name__ == "__main__":

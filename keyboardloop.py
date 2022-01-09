@@ -125,6 +125,7 @@ def presskey(key):
                 print('手离启动')
                 control.isHandle=True
                 control.run(mode='anaGear')
+
                 print('手离异常退出')
 
             threadPool.submit(run)
