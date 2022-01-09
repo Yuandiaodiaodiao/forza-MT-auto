@@ -1,6 +1,6 @@
 # forza-MT-auto
 ## Forza Horizon5 自动手动挡 支持键盘,手柄,windows
-
+# python3.9可能会有问题 请用py38
 ## 更新日志
 
 只降档不升档模式: argsolver.py里 onlyDown设为1 playerCoolDown适当减小 如0.1
