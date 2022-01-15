@@ -29,7 +29,7 @@ parser.add_argument('--playerCoolDown', type=float, help='玩家介入换挡后�
 # 降档时下面两条并行
 # if accelAfterGearDown>0 按离合 sleep(accelBeforeGearDown) 按油门 sleep(accelAfterGearDown) 抬油门
 # 按离合 sleep(clutchBefore) 换挡 sleep(clutchAfter) 抬油门
-parser.add_argument('--accelAfterGearDown', type=float, help='降档补油时长 0是关闭(秒)', default=0.1)
+parser.add_argument('--accelAfterGearDown', type=float, help='降档补油时长 0是关闭(秒)', default=0)
 parser.add_argument('--accelBeforeGearDown', type=float, help='从按下离合到启动降档补油的时长(秒)', default=0.05)
 parser.add_argument('--accelKey', type=str, help='油门按键', default='w')
 # 有人说后驱降档滑了
@@ -37,7 +37,7 @@ parser.add_argument('--minDownGear', type=int, help='最低降档降到的档位
 parser.add_argument('--minSpeed', type=int, help='当速度低于这个值时换挡系统不会工作', default=0)
 
 parser.add_argument('--onlyDown', type=int, help='只降档不升档', default=0)
-parser.add_argument('--speedGap', type=int, help='降档策略 当前档位速度小于 下一档位能触及的最高速度-speedGap时 降档', default=10)
+parser.add_argument('--speedGap', type=int, help='降档策略 当前档位速度小于 下一档位能触及的最高速度-speedGap时 降档', default=20)
 parser.add_argument('--enablePlot', type=int, help='设置为0 关闭统计图表 用于兼容py39', default=1)
 
 args = parser.parse_args()

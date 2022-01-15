@@ -65,9 +65,8 @@ def trycatch(func):
         except Exception as e:
             print('出错了')
             print(e)
-            raise e
             print(str(e))
-
+        print('异常退出???')
     return with_logging
 
 
@@ -220,6 +219,11 @@ class ForzaControl:
             # time.sleep(1)
             def getFdp():
                 print('get Fdp thread启动')
+                try:
+                    while not self.fdpQueue.empty():
+                        self.fdpQueue.get()
+                except:
+                    pass
                 while True:
                     message, address = self.server_socket.recvfrom(1024)
                     fdp = ForzaDataPacket(message, packet_format=self.packet_format)
