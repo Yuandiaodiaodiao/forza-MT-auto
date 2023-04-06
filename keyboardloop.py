@@ -5,7 +5,7 @@ from logger import logger
 
 threadPool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="exec")
 from pynput.keyboard import Listener
-from keyboardsim import press_str
+from keyboardsim import press_str,pressdown_str,pressup_str
 import os
 import time
 import threading
@@ -129,7 +129,36 @@ def presskey(key):
                 print('手离异常退出')
 
             threadPool.submit(run)
-
+    elif t=='f7':
+        def enter():
+            while True:
+                press_str('enter')
+                time.sleep(0.1)
+        threadPool.submit(enter)
+    elif t=='f6':
+        def enter():
+            while True:
+                press_str('w')
+                time.sleep(1)
+                press_str('a')
+                time.sleep(1)
+        threadPool.submit(enter)
+    elif t=='f5':
+        def enter():
+            pressdown_str('w')
+            while True:
+                time.sleep(1)
+                pressup_str('w')
+                time.sleep(0.02)
+                pressdown_str('w')
+                press_str('enter')
+                time.sleep(1)
+        threadPool.submit(enter)
+    elif t=='f4':
+        def enter():
+            pressdown_str('a')
+            pressdown_str('f')
+        threadPool.submit(enter)
     elif t == args.stop:
         # 停止当前的动作
         logger.info("stop")

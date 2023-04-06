@@ -95,9 +95,11 @@ class ForzaDataPacket:
                 setattr(self, prop_name, prop_value)
         elif packet_format == 'fh4':
             patched_data = data[:232] + data[244:323]
+
             for prop_name, prop_value in zip(self.sled_props + self.dash_props,
                                              unpack(self.dash_format,
                                                     patched_data)):
+
                 setattr(self, prop_name, prop_value)
                 # if prop_value!=0:
                 #     print(f'{prop_name}={prop_value}')

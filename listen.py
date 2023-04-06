@@ -410,7 +410,11 @@ class ForzaControl:
                     # 没滑并且到转速 并且踩油门 升档
                     # print(f'acc={accel} rpm={rpm} targetRpm={gearNowConfig["rpm"]}')
                     if rpm > gearNowConfig['rpm'] * 0.99 and slip < 1 and accel > 100:
-                        gearfix = gear + 1
+                        if gear>1:
+                            gearfix = gear + 1
+                        elif gear==1 and speed>gearNowConfig['speed']*0.9:
+                            # 起步防滑
+                            gearfix = gear + 1
                     elif speed > gearNowConfig['speed']:
                         # 速度超过了 升档
                         gearfix = gear + 1
@@ -425,6 +429,9 @@ class ForzaControl:
                                 gearfix = gear - i
                         except:
                             pass
+                    if gear-gearfix==1 and accel < 10:
+                        # 只需要降一档的情况卡 没给油 先不降档
+                        gearfix=gear
                     if gearLowConfig is None:
                         print('降档策略执行失败')
 
