@@ -1,7 +1,8 @@
 # forza-MT-auto
 ## Forza Horizon5 自动手动挡 支持键盘,手柄,windows
-# python3.9可能会有问题 请用py38
+# python3.9若plt报错请在argsolver中将enablePlot设为0 关闭图表输出功能
 ## 更新日志
+添加参数speedGap用来确定降档速度阈值
 
 只降档不升档模式: argsolver.py里 onlyDown设为1 playerCoolDown适当减小 如0.1
 
